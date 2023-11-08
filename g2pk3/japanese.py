@@ -1,7 +1,7 @@
 import re
 from unidecode import unidecode
 import pyopenjtalk
-from .korean import join_jamos
+from .korean import join_jamos, split_syllables
 
 
 # Regular expression matching Japanese without punctuation marks:
@@ -77,8 +77,8 @@ repl_lst = {
     'u': 'u ',
     'e': 'e ',
     'o': 'o ',
-    'Q': ' |Q ',
-    'N': ' |N ',
+    'Q': '|Q',
+    'N': '|N',
     'U': 'u ',
     'I': 'i ',
     'A': 'a ',
@@ -87,6 +87,7 @@ repl_lst = {
 }
 
 repl_lst2 = {
+    'ts': 'ㅊ',
     'ʧu': '츠',
     'tsu': '츠',
     'zu': '즈',
@@ -106,7 +107,6 @@ repl_lst2 = {
     's': 'ㅅ',
     'j': 'ㅈ',
     'ʧ': 'ㅊ',
-    'ts': 'ㅊ',
     'k': 'ㅋ',
     't': 'ㅌ',
     'p': 'ㅍ',
@@ -123,9 +123,6 @@ repl_lst2 = {
     'y*ㅜ':'*ㅠ',
     'y*ㅔ':'*ㅖ',
     'y*ㅗ':'*ㅛ',
-
-    '  |N':'|N',
-    '  |Q':'|Q',
 }
 
 repl_lst3 = {
@@ -157,18 +154,18 @@ repl_lst3 = {
 }
 
 
-def convert_jpn(text):
-    text = japanese_to_romaji_with_accent(text).strip().replace('^', '').replace(' ', '^ ')
+def convert_jpn(string):
+    jpn_words = set(re.findall("[ぁ-んァ-ン一-龯']+", string))
+    for jpn_word in jpn_words:
+        word = japanese_to_romaji_with_accent(jpn_word).strip().replace('^', '').replace(' ', '^ ')
+        for k, v in repl_lst.items():
+            word = word.replace(k, v)
+        for k, v in repl_lst2.items():
+            word = word.replace(k, v)
+        word = ' '.join([i.replace('*', 'ㅇ') if i.startswith('*') else i.replace('*', '') for i in word.strip().split(' ')])
+        for k, v in repl_lst3.items():
+            word = word.replace(k, v)
+        word = join_jamos(word.replace('  ', ' ')).replace(' ', '').replace('^', ' ')
+        string = join_jamos(split_syllables(string.replace(jpn_word, word))).replace('ㄴ', 'ㅇㅡㅇ').replace('ㅇㅇ', 'ㅇ').replace('ㅅ', '')
 
-    for k, v in repl_lst.items():
-        text = text.replace(k, v)
-    for k, v in repl_lst2.items():
-        text = text.replace(k, v)
-
-    text = ' '.join([i.replace('*', 'ㅇ') if i.startswith('*') else i.replace('*', '') for i in text.strip().split(' ')])
-
-    for k, v in repl_lst3.items():
-        text = text.replace(k, v)
-
-    text = join_jamos(text.replace('  ', ' ')).replace(' ', '').replace('^', ' ')
-    return text
+    return string

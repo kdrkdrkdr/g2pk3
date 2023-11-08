@@ -23,12 +23,9 @@ setuptools.setup(
         "Operating System :: OS Independent"
     ],
     install_requires=[
-        'unidecode',
         'jamo',
-        'cmake',
-        'jaconv',
-        'pyopenjtalk',
         'g2p_en',
+        'pyopenjtalk',
     ],
     py_modules = ['g2pk3']
 )
