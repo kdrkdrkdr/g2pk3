@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="g2pk3",
-    version="1.0",
+    version="1.1",
     license='MIT',
     author="kdr",
     author_email="kdrhacker1234@gmail.com",

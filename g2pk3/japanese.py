@@ -1,171 +1,153 @@
+from g2pk3.korean import join_jamos, split_syllables
 import re
-from unidecode import unidecode
 import pyopenjtalk
-from .korean import join_jamos, split_syllables
+import jaconv
 
+patt_repl = [
+    ('ア',    'A'),
+    ('イ',    'I'),
+    ('ウ',    'U'),
+    ('エ',    'E'),
+    ('オ',    'O'),
 
-# Regular expression matching Japanese without punctuation marks:
-_japanese_characters = re.compile(
-    r'[A-Za-z\d\u3005\u3040-\u30ff\u4e00-\u9fff\uff11-\uff19\uff21-\uff3a\uff41-\uff5a\uff66-\uff9d]')
+    ('カ',       'ka'),
+    ('キ',       'ki'),
+    ('ク',       'ku'),
+    ('ケ',       'ke'),
+    ('コ',       'ko'),
 
-# Regular expression matching non-Japanese characters or punctuation marks:
-_japanese_marks = re.compile(
-    r'[^A-Za-z\d\u3005\u3040-\u30ff\u4e00-\u9fff\uff11-\uff19\uff21-\uff3a\uff41-\uff5a\uff66-\uff9d]')
+    ('ガ',       'ga'),
+    ('ギ',       'gi'),
+    ('グ',       'gu'),
+    ('ゲ',       'ge'),
+    ('ゴ',       'go'),
 
-# List of (symbol, Japanese) pairs for marks:
-_symbols_to_japanese = [(re.compile('%s' % x[0]), x[1]) for x in [
-    ('％', 'パーセント')
-]]
+    ('サ',       'sa'),
+    ('シ',       'si'),
+    ('ス',       'ㅅㅡ'),
+    ('セ',       'se'),
+    ('ソ',       'so'),
 
+    ('ザ',       'za'),
+    ('ジ',       'zi'),
+    ('ズ',       'ㅈㅡ'),
+    ('ゼ',       'ze'),
+    ('ゾ',       'zo'),
 
+    ('タ',       'ta'),
+    ('チ',       'ci'),
+    ('ツ',       'cu'),
+    ('テ',       'te'),
+    ('ト',       'to'),
 
-def symbols_to_japanese(text):
-    for regex, replacement in _symbols_to_japanese:
-        text = re.sub(regex, replacement, text)
-    return text
+    ('ダ',       'da'),
+    ('ヂ',       'zi'),
+    ('ヅ',       'zu'),
+    ('デ',       'de'),
+    ('ド',       'do'),
 
+    ('ナ',       'na'),
+    ('ニ',       'ni'),
+    ('ヌ',       'nu'),
+    ('ネ',       'ne'),
+    ('ノ',       'no'),
 
-def japanese_to_romaji_with_accent(text):
-    '''Reference https://r9y9.github.io/ttslearn/latest/notebooks/ch10_Recipe-Tacotron.html'''
-    text = symbols_to_japanese(text)
-    sentences = re.split(_japanese_marks, text)
-    marks = re.findall(_japanese_marks, text)
-    text = ''
-    for i, sentence in enumerate(sentences):
-        if re.match(_japanese_characters, sentence):
-            if text != '':
-                text += ' '
-            labels = pyopenjtalk.extract_fullcontext(sentence)
-            for n, label in enumerate(labels):
-                phoneme = re.search(r'\-([^\+]*)\+', label).group(1)
-                if phoneme not in ['sil', 'pau']:
-                    text += phoneme.replace('ch', 'ʧ').replace('sh',
-                                                               'ʃ').replace('cl', 'Q')
-                else:
-                    continue
-                # n_moras = int(re.search(r'/F:(\d+)_', label).group(1))
-                a1 = int(re.search(r"/A:(\-?[0-9]+)\+", label).group(1))
-                a2 = int(re.search(r"\+(\d+)\+", label).group(1))
-                a3 = int(re.search(r"\+(\d+)/", label).group(1))
-                if re.search(r'\-([^\+]*)\+', labels[n + 1]).group(1) in ['sil', 'pau']:
-                    a2_next = -1
-                else:
-                    a2_next = int(
-                        re.search(r"\+(\d+)\+", labels[n + 1]).group(1))
-                # Accent phrase boundary
-                if a3 == 1 and a2_next == 1:
-                    text += ' '
-                # Falling
-                elif a1 == 0 and a2_next == a2 + 1:
-                    text += '↓'
-                # Rising
-                elif a2 == 1 and a2_next == 2:
-                    text += '↑'
-        if i < len(marks):
-            text += unidecode(marks[i]).replace(' ', '')
-    return text
+    ('ハ',       'ha'),
+    ('ヒ',       'hi'),
+    ('フ',       'hu'),
+    ('ヘ',       'he'),
+    ('ホ',       'ho'),
 
+    ('バ',       'ba'),
+    ('ビ',       'bi'),
+    ('ブ',       'bu'),
+    ('ベ',       'be'),
+    ('ボ',       'bo'),
 
+    ('パ',       'pa'),
+    ('ピ',       'pi'),
+    ('プ',       'pu'),
+    ('ペ',       'pe'),
+    ('ポ',       'po'),
 
+    ('マ',       'ma'),
+    ('ミ',       'mi'),
+    ('ム',       'mu'),
+    ('メ',       'me'),
+    ('モ',       'mo'),
 
-repl_lst = {
-    '.': '. ',
-    '↓': '',
-    '↑': '',
-    'a': 'a ',
-    'i': 'i ',
-    'u': 'u ',
-    'e': 'e ',
-    'o': 'o ',
-    'Q': '|Q',
-    'N': '|N',
-    'U': 'u ',
-    'I': 'i ',
-    'A': 'a ',
-    'E': 'e ',
-    'O': 'o ',
-}
+    ('ヤ',       'ya'),
+    ('ユ',       'yu'),
+    ('ヨ',       'yo'),
+    ('ャ',       'ja'),
+    ('ュ',       'ju'),
+    ('ョ',       'jo'),
 
-repl_lst2 = {
-    'ts': 'ㅊ',
-    'ʧu': '츠',
-    'tsu': '츠',
-    'zu': '즈',
-    'su': '스',
+    ('ラ',       'ra'),
+    ('リ',       'ri'),
+    ('ル',       'ru'),
+    ('レ',       're'),
+    ('ロ',       'ro'),
+    ('ワ',       'wa'),
+    ('ヲ',       'o'),
 
-    'wa': '*ㅘ',
-    'wo': '오',
+    ('ン',       'N'),
+    ('ッ',       'Q'),
 
-    'g': 'ㄱ',
-    'n': 'ㄴ',
-    'd': 'ㄷ',
-    'r': 'ㄹ',
-    'm': 'ㅁ',
-    'b': 'ㅂ',
-    'v': 'ㅂ',
-    'ʃ': 'ㅅ',
-    's': 'ㅅ',
-    'j': 'ㅈ',
-    'ʧ': 'ㅊ',
-    'k': 'ㅋ',
-    't': 'ㅌ',
-    'p': 'ㅍ',
-    'h': 'ㅎ',
-    'f': 'ㅎ',
-
-    'a': '*ㅏ',
-    'i': '*ㅣ',
-    'u': '*ㅜ',
-    'e': '*ㅔ',
-    'o': '*ㅗ',
-
-    'y*ㅏ':'*ㅑ',
-    'y*ㅜ':'*ㅠ',
-    'y*ㅔ':'*ㅖ',
-    'y*ㅗ':'*ㅛ',
-}
-
-repl_lst3 = {
-    '|Qㄱ': 'ㄱㄱ',
-    '|Qㅅ': 'ㅅㅅ',
-    '|Qㄷ': 'ㄷㄷ',
-    '|Qㅊ': 'ㄷㅊ',
-    '|Qㅍ': 'ㅂㅍ',
-
-    '|Nㅁ': 'ㅁㅁ',
-    '|Nㅂ': 'ㅁㅂ',
-    '|Nㅍ': 'ㅁㅍ',
-
-    '|Nㅅ': 'ㄴㅅ',
-    '|Nㅈ': 'ㄴㅈ',
-    '|Nㅌ': 'ㄴㅌ',
-    '|Nㅊ': 'ㄴㅊ',
-    '|Nㄷ': 'ㄴㄷ',
-    '|Nㄴ': 'ㄴㄴ',
-    '|Nㄹ': 'ㄴㄹ',
-
-    '|Nㅋ': 'ㅇㅋ',
-    '|Nㄱ': 'ㅇㄱ',
-    '|Nㅇ': 'ㅇㅇ',
-    '|Nㅎ': 'ㅇㅎ',
     
-    '|Q': 'ㅅ',
-    '|N': 'ㄴ',
-}
 
+    (r'([td])eィ',       r'\1i'),
+    (r'([td])oゥ',       r'\1u'),
+    (r'([td])ej',       r'\1y'),
+    (r'([aiueoAIUEO])(ー)', r'\1\1'),
+    (r'([aiueoAIUEO])Q([gsd])', r'\1\2\2'),
+    (r'([aiueoAIUEO])Q([c])', r'\1ㄷ\2'),
+    (r'([aiueoAIUEO])Q([p])', r'\1ㅂ\2'),
+    (r'([aiueoAIUEO])Q([^gsdcp]|$)', r'\1ㅅ\2'),
+    (r'(Q+)', '읏 '),
+    (r'([aiueoAIUEO])N([mbp])', r'\1ㅁ\]2'),
+    (r'([aiueoAIUEO])N([kghaiueoy])', r'\1ㅇ\2'),
+    (r'([aiueoAIUEO])N([sztcdnr]|$)', r'\1ㄴ\2'),
+    (r'(N+)', lambda match: '으'*(len(match.group())-1) + '응'),
+
+    ('A', 'ㅇㅏ'),
+    ('I', 'ㅇㅣ'),
+    ('U', 'ㅇㅜ'),
+    ('E', 'ㅇㅔ'),
+    ('O', 'ㅇㅗ'),
+    ('wa',        '와'),
+    ('k',         'ㅋ'),
+    ('g',         'ㄱ'),
+    ('s',         'ㅅ'),
+    ('z',         'ㅈ'),
+    ('t',         'ㅌ'),
+    ('c',         'ㅊ'),
+    ('d',         'ㄷ'),
+    ('n',         'ㄴ'),
+    ('h',         'ㅎ'),
+    ('b',         'ㅂ'),
+    ('p',         'ㅍ'),
+    ('m',         'ㅁ'),
+    ('r',         'ㄹ'),
+    ('ya',        'ㅑ'),
+    ('yu',        'ㅠ'),
+    ('yo',        'ㅛ'),
+    ('ija',       'ㅑ'),
+    ('iju',       'ㅠ'),
+    ('ijo',       'ㅛ'),
+    ('a',         'ㅏ'),
+    ('i',         'ㅣ'),
+    ('u',         'ㅜ'),
+    ('e',         'ㅔ'),
+    ('o',         'ㅗ'),
+    ('・',          ' '),
+]
 
 def convert_jpn(string):
     jpn_words = set(re.findall("[ぁ-んァ-ン一-龯']+", string))
     for jpn_word in jpn_words:
-        word = japanese_to_romaji_with_accent(jpn_word).strip().replace('^', '').replace(' ', '^ ')
-        for k, v in repl_lst.items():
-            word = word.replace(k, v)
-        for k, v in repl_lst2.items():
-            word = word.replace(k, v)
-        word = ' '.join([i.replace('*', 'ㅇ') if i.startswith('*') else i.replace('*', '') for i in word.strip().split(' ')])
-        for k, v in repl_lst3.items():
-            word = word.replace(k, v)
-        word = join_jamos(word.replace('  ', ' ')).replace(' ', '').replace('^', ' ')
-        string = join_jamos(split_syllables(string.replace(jpn_word, word))).replace('ㄴ', 'ㅇㅡㅇ').replace('ㅇㅇ', 'ㅇ').replace('ㅅ', '')
-
+        word = pyopenjtalk.g2p(jpn_word, kana=True)
+        for pattern, repl in patt_repl:
+            word = re.sub(pattern, repl, word)
+        string = string.replace(jpn_word, word)
     return string
