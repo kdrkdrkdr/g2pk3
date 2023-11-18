@@ -1,6 +1,6 @@
-test.py
-upload.sh
 
+upload.sh
+*.txt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

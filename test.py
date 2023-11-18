@@ -153,7 +153,6 @@ patt_repl = [
 ]
 
 def convert_jpn(string):
-    string = re.sub("[ぁ-んァ-ン一-龯']+", '', string)
     word = pyopenjtalk.g2p(string, kana=True)
     for pattern, repl in patt_repl:
         word = re.sub(pattern, repl, word)
@@ -162,5 +161,19 @@ def convert_jpn(string):
         .replace('？', '?') \
         .replace('！', '!') \
         .replace('、', ',') \
-        .replace('・',          ' ')
+        .replace('・', ' ')
     return word
+
+# from g2pk3 import G2p
+
+
+# g2p = G2p()
+
+print(convert_jpn('水をマレーシアから買わなくてはならないのです。안녕하세요. 水をマレxcsxシアから買わなく. hello.'))
+# f = open('a.txt', 'r', encoding='utf-8').read().split('\n')
+# g = open('b.txt', 'w', encoding='utf-8')
+# for i in f:
+#     a = i.split('|')[1]
+#     g.write(convert_jpn(a)+'\n')
+# g.close()
+
