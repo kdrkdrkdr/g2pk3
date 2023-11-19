@@ -144,7 +144,7 @@ class G2p(object):
         # 1. idioms
         string = self.idioms(string, descriptive, verbose)
 
-        # 2 English and Japanese to Hangul
+        # 2 Convert English and Japanese to Hangul
         string = convert_eng(string)
         string = convert_jpn(string)
 
