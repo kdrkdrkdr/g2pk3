@@ -25,6 +25,8 @@ setuptools.setup(
     install_requires=[
         'jamo',
         'g2p_en',
+    ],
+    dependency_links=[
         'git+https://github.com/kdrkdrkdr/pyopenjtalk',
     ],
     py_modules = ['g2pk3']
