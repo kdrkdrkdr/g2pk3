@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="g2pk3",
-    version="1.2",
+    version="1.4",
     license='MIT',
     author="kdr",
     author_email="kdrhacker1234@gmail.com",
@@ -26,8 +26,6 @@ setuptools.setup(
         'jamo',
         'g2p_en',
     ],
-    dependency_links=[
-        'git+https://github.com/kdrkdrkdr/pyopenjtalk',
-    ],
+    dependency_links=["git+https://github.com/kdrkdrkdr/pyopenjtalk.git@main#egg=pyopenjtalk"],
     py_modules = ['g2pk3']
 )
