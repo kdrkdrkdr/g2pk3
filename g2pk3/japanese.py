@@ -156,8 +156,8 @@ patt_repl = [
     (r'(N+)', lambda match: '으'*(len(match.group())-1) + '응'),
 ]
 
-def convert_j2k(string):
-    word = pyopenjtalk.g2p(string, kana=True)
+def convert_j2k(string, for_ko=False):
+    word = pyopenjtalk.g2p(string, kana=True, for_ko=for_ko)
     for pattern, repl in patt_repl:
         word = re.sub(pattern, repl, word)
     word = join_jamos(word) \
@@ -169,4 +169,4 @@ def convert_j2k(string):
     return word
 
 def convert_jpn(string):
-    return re.sub("[０-９ぁ-んァ-ン一-龯ー。？！、・']+", lambda x: convert_j2k(x.group(0)), string)
+    return re.sub("[０-９ぁ-んァ-ン一-龯ー。？！、・']+", lambda x: convert_j2k(x.group(0), True), string)
