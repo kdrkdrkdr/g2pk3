@@ -168,5 +168,6 @@ def convert_j2k(string, for_ko=False):
         .replace('・', ' ')
     return word
 
+
 def convert_jpn(string):
-    return re.sub("[０-９ぁ-んァ-ン一-龯ー。？！、・']+", lambda x: convert_j2k(x.group(0), True), string)
+    return re.sub("[０-９ぁ-ゔァ-ヴ一-龥ー。？！、・']+", lambda x: convert_j2k(x.group(0), True), string)
